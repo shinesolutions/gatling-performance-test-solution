@@ -1,0 +1,11 @@
+<environments>
+    <test>
+        <PostCode>http://api.postcodes.io</PostCode>
+        <basketball>https://v1.basketball.api-sports.io</basketball>
+    </test>
+    <stg>
+        <PostCode>http://api.postcodes.io</PostCode>
+        <basketball>https://v1.basketball.api-sports.io</basketball>
+    </stg>
+
+</environments>
