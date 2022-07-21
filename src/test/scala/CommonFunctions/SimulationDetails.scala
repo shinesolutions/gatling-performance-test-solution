@@ -22,6 +22,13 @@ object SimulationDetails {
       return XML.loadFile("src" + fs + "test" + fs + "scala" + fs + "simulations" + fs + simulationName + fs + configFileName)
   }
 
+  /**
+   * Get the simulation values from the config xml
+   * @param simulationName Name of the running simulation
+   * @param simulationType Type of the simulation
+   * @param environment Environment where test needs to run
+   * @return noOfUsers, rampUpDuration, peakLoadDuration
+   */
   def getSimulationValues(simulationName: String, simulationType: String, environment: String) : (Int, Int, Int) = {
 
     //Open the XML which contains simulation details
@@ -83,6 +90,12 @@ object SimulationDetails {
 
   }
 
+  /**
+   * Get the scenario values from the config xml
+   * @param simulationName Name of the running simulation
+   * @param simulationType Type of the simulation
+   * @return noOfUsers, rampUpDuration, peakLoadDuration
+   */
   def getScenarioValues(simulationName: String, simulationType: String) : (Int, Int, Map[String, Double]) = {
 
     //Open the XML which contains simulation details
@@ -169,6 +182,12 @@ object SimulationDetails {
 
   }
 
+  /**
+   * Validate the simulation parameter
+   * @param name Parameter for validation
+   * @param value Value of parameter for validation
+   * @return noOfUsers, rampUpDuration, peakLoadDuration
+   */
   def validateSimulationParameter(name: String, value: Int): Unit = {
     if(name == "NumberOfUsers" || name == "RampUpDuration" || name == "PeakLoadDuration") {
       if(value < 1)
