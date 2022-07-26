@@ -1,19 +1,10 @@
 package config
 
-import io.gatling.core.Predef._
-import io.gatling.core.feeder.FeederBuilder
-import io.gatling.core.structure.ChainBuilder
-
-import scala.xml.{Elem, XML}
-//import io.gatling.jsonpath.GatlingElParser.Elem
+import CommonFunctions.SimulationDetails.getClass
 
 import java.io.File
-
-
-import scala.util.Random
-import scala.util.matching.Regex
-import scala.xml
-
+import java.nio.file.Paths
+import scala.xml.{Elem, XML}
 
 object ConfigDetails {
 
@@ -22,9 +13,8 @@ object ConfigDetails {
    *  @return An Elem object that contains the elements from the XML file
    */
   def getEnvironmentConfigXML(): Elem = {
-    val fs = File.separator
 
-    return XML.loadFile("src" + fs + "test" + fs + "scala" + fs + "config" + fs + "EnvironmentConfig.XML")
+    XML.load(getClass.getResourceAsStream("/config/EnvironmentConfig.XML"))
   }
 
   /**
@@ -41,7 +31,7 @@ object ConfigDetails {
       throw new Exception("ERROR - Endpoint is not defined for host '" + hostName + "' in EnvironmentConfig.xml for environment '" + environmentName + "'")
     }
 
-    return scala.util.Properties.envOrElse(hostName.toUpperCase, valueFromXml)
+    scala.util.Properties.envOrElse(hostName.toUpperCase, valueFromXml)
 
   }
 

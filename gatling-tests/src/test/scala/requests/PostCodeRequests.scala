@@ -1,4 +1,4 @@
-package requests.PostCode
+package requests
 
 import io.gatling.core.Predef._
 import io.gatling.core.structure.ChainBuilder

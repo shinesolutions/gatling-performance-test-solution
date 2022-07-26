@@ -7,7 +7,7 @@
         </Get_Postcode>
     </DefaultWeighting>
     <simulation>
-        <Postcode_1>
+        <PostCode_1>
             <NumberOfUsers>2</NumberOfUsers>
             <RampUpDuration>1</RampUpDuration>
             <PeakLoadDuration>1</PeakLoadDuration>
@@ -18,8 +18,8 @@
                     <RequestsPerIteration>1</RequestsPerIteration>
                 </Get_Postcode_Random>
             </ActionWeighting>
-        </Postcode_1>
-        <Postcode_2>
+        </PostCode_1>
+        <PostCode_2>
             <NumberOfUsers>200</NumberOfUsers>
             <RampUpDuration>15</RampUpDuration>
             <PeakLoadDuration>60</PeakLoadDuration>
@@ -34,6 +34,6 @@
                     <RequestsPerIteration>1</RequestsPerIteration>
                 </Get_Postcode>
             </ActionWeighting>
-        </Postcode_2>
+        </PostCode_2>
     </simulation>
 </simulations>

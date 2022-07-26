@@ -1,25 +1,35 @@
 package CommonFunctions
 
-import java.io.File
+import java.io.{File, InputStream}
+import java.nio.file.Paths
+import scala.collection.mutable
 import scala.xml.{Elem, XML}
 
 object SimulationDetails {
 
 
+
   /**
    * Opens the XML file containing the details of the simulation
+   *
    * @param simulationName Name of the running simulation
    * @param configFileName Optional - Name of the config file. If left blank it assumes the config file name is same as simulation name + "config"
    * @return An Elem object containing all the elements from the XML file
    *
    */
   def getSimulationConfigXML(simulationName: String, configFileName: String = ""): Elem = {
-    val fs = File.separator
+
+    var xmlFilePath = "/config/"
 
     if (configFileName.isEmpty)
-      return XML.loadFile("src" + fs + "test" + fs + "scala" + fs + "simulations" + fs + simulationName + fs + simulationName + "Config.xml")
+      xmlFilePath = xmlFilePath + simulationName + "Config.XML"
     else
-      return XML.loadFile("src" + fs + "test" + fs + "scala" + fs + "simulations" + fs + simulationName + fs + configFileName)
+      xmlFilePath = xmlFilePath + configFileName
+
+    //TODO::: https://www.baeldung.com/java-classpath-resource-cannot-be-opened
+
+    XML.load(getClass.getResourceAsStream(xmlFilePath))
+
   }
 
   /**
@@ -38,7 +48,7 @@ object SimulationDetails {
     var rampUpDuration = 0
     var peakLoadDuration = 0
 
-    val summary = new StringBuilder("\n******************** SIMULATION VALUES ********************")
+    val summary = new mutable.StringBuilder("\n******************** SIMULATION VALUES ********************")
 
     summary.append("\nSimulation: " + simulationName)
     summary.append("\nEnvironment: " + environment)
@@ -46,32 +56,32 @@ object SimulationDetails {
     summary.append("\n**********************************************************")
 
     if ((simulationParams \\ "simulations" \ "simulation" \ simulationType).isEmpty)
-      throw new Exception("ERROR - Invalid Simulation Name provided - " + simulationType + "This simulation name doesn not exist in Simulation")
+      throw new Exception("ERROR - Invalid Simulation Name provided - " + simulationType + "This simulation name does not exist in Simulation")
 
     // Get the number of users
-    if (System.getProperty("noOfUsers") == null || (System.getProperty("noOfUsers") == ""))
+    if (System.getProperty("USERS") == null || (System.getProperty("USERS") == ""))
       noOfUsers = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "NumberOfUsers").text.toInt
     else
-      noOfUsers = System.getProperty("num_of_users").toInt
+      noOfUsers = System.getProperty("USERS").toInt
 
-    validateSimulationParameter("NumberOfUsers", noOfUsers)
+    validateSimulationParameter("USERS", noOfUsers)
     summary.append("\nThreads: " + noOfUsers)
 
-    // Get the Rampup Time
-    if (System.getProperty("rampUpDuration") == null || (System.getProperty("rampUpDuration") == ""))
+    // Get the Ramp-up Time
+    if (System.getProperty("RAMP_UP_DURATION") == null || (System.getProperty("RAMP_UP_DURATION") == ""))
       rampUpDuration = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "RampUpDuration").text.toInt
     else
-      rampUpDuration = System.getProperty("rampUpDuration").toInt
+      rampUpDuration = System.getProperty("RAMP_UP_DURATION").toInt
 
-    validateSimulationParameter("RampUpDuration", rampUpDuration)
+    validateSimulationParameter("RAMP_UP_DURATION", rampUpDuration)
 
     // Get the PeakLoadDuration
-    if (System.getProperty("peakLoadDuration") == null || (System.getProperty("peakLoadDuration") == ""))
+    if (System.getProperty("PEAK_LOAD_DURATION") == null || (System.getProperty("PEAK_LOAD_DURATION") == ""))
       peakLoadDuration = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "PeakLoadDuration").text.toInt
     else
-      peakLoadDuration = System.getProperty("peakLoadDuration").toInt
+      peakLoadDuration = System.getProperty("PEAK_LOAD_DURATION").toInt
 
-    validateSimulationParameter("PeakLoadDuration", peakLoadDuration)
+    validateSimulationParameter("PEAK_LOAD_DURATION", peakLoadDuration)
 
     summary.append("\nRamp Up Duration: " + rampUpDuration + " minute(s)")
     rampUpDuration = rampUpDuration * 60
@@ -86,7 +96,7 @@ object SimulationDetails {
 
     print(summary)
 
-    return (noOfUsers, rampUpDuration, peakLoadDuration)
+    (noOfUsers, rampUpDuration, peakLoadDuration)
 
   }
 
@@ -105,29 +115,31 @@ object SimulationDetails {
     var rampUpDuration = 0
     var targetRPM = 0
 
-    val summary = new StringBuilder("\n***********************************************************")
+    val summary = new mutable.StringBuilder("\n***********************************************************")
 
     // Get the number of users
-    if (System.getProperty("noOfUsers") == null || (System.getProperty("noOfUsers") == ""))
+    if (System.getProperty("USERS") == null || (System.getProperty("USERS") == ""))
       noOfUsers = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "NumberOfUsers").text.toInt
     else
-      noOfUsers = System.getProperty("num_of_users").toInt
+      noOfUsers = System.getProperty("USERS").toInt
 
-    // Get the Rampup Time
-    if (System.getProperty("rampUpDuration") == null || (System.getProperty("rampUpDuration") == ""))
+    validateSimulationParameter("USERS", noOfUsers)
+
+    // Get the Ramp-up Time
+    if (System.getProperty("RAMP_UP_DURATION") == null || (System.getProperty("RAMP_UP_DURATION") == ""))
       rampUpDuration = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "RampUpDuration").text.toInt
     else
-      rampUpDuration = System.getProperty("rampUpDuration").toInt
+      rampUpDuration = System.getProperty("RAMP_UP_DURATION").toInt
 
-    validateSimulationParameter("RampUpDuration", rampUpDuration)
+    validateSimulationParameter("RAMP_UP_DURATION", rampUpDuration)
 
     // Get the Target RPS
-    if (System.getProperty("targetRPM") == null || (System.getProperty("targetRPM") == ""))
+    if (System.getProperty("TARGET_RPM") == null || (System.getProperty("TARGET_RPM") == ""))
       targetRPM = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "TargetRPM").text.toInt
     else
-      targetRPM = System.getProperty("targetRPM").toInt
+      targetRPM = System.getProperty("TARGET_RPM").toInt
 
-    validateSimulationParameter("TargetRPM", targetRPM)
+    validateSimulationParameter("TARGET_RPM", targetRPM)
 
     summary.append("\nTarget RPM: " + targetRPM)
     val targetRPS = targetRPM / 60
@@ -162,7 +174,7 @@ object SimulationDetails {
     //Calculate minimum and maximum pacing
     val (pacingMin, pacingMax) = calculateIterationPacing(targetRPS, noOfUsers, weightedRequestsPerIteration)
 
-    summary.append("\nPacing Average: " + (pacingMin.toInt + ((pacingMax - pacingMin) / 2)) + " ms")
+    summary.append("\nPacing Average: " + (pacingMin + ((pacingMax - pacingMin) / 2)) + " ms")
     summary.append("\nPacing Minimum: " + pacingMin + " ms")
     summary.append("\nPacing Maximum: " + pacingMax + " ms")
 
@@ -178,7 +190,7 @@ object SimulationDetails {
     summary.append("\n***********************************************************\n\n")
     print(summary)
 
-    return (pacingMin, pacingMax, userDistribution)
+    (pacingMin, pacingMax, userDistribution)
 
   }
 
@@ -189,14 +201,14 @@ object SimulationDetails {
    * @return noOfUsers, rampUpDuration, peakLoadDuration
    */
   def validateSimulationParameter(name: String, value: Int): Unit = {
-    if(name == "NumberOfUsers" || name == "RampUpDuration" || name == "PeakLoadDuration") {
+    if(name == "USERS" || name == "RAMP_UP_DURATION" || name == "PEAK_LOAD_DURATION") {
       if(value < 1)
-        throw new Exception("ERROR - Invalid value provided. The minimum value accepted for " + name + " is 1 i.e. it cannot be less than 1. Current value is " + value + ".")
+        throw new Exception("ERROR - Invalid value provided. The minimum value accepted for " + name + " is 1 i.e. it cannot be less than 1 minute. Current value is " + value + ".")
     }
 
-    else if(name == "TargetRPM") {
+    else if(name == "TARGET_RPM") {
       if(value < 60)
-        throw new Exception("ERROR - Invalid value provided. The minimum value accepted for " + name + " is 60 i.e. it cannot be less than 60. Current value is " + value + ".")
+        throw new Exception("ERROR - Invalid value provided. The minimum value accepted for " + name + " is 60 i.e. it cannot be less than 60 requests per minute. Current value is " + value + ".")
     }
 
     else {
@@ -207,10 +219,10 @@ object SimulationDetails {
 
   /***
    * Calculates the iteration pacing required to meet the input RPS (target RPS) based on number of users and requests
-   * @param targetRPS
-   * @param numberOfUsers
-   * @param requestsPerIteration
-   * @return
+   * @param targetRPS the Target Requests per second
+   * @param numberOfUsers the number of users/threads
+   * @param requestsPerIteration requests per iteration
+   * @return pacingMin, pacingMax
    */
   def calculateIterationPacing(targetRPS: Int, numberOfUsers: Int, requestsPerIteration: Double) : (Int, Int) ={
 
@@ -231,7 +243,7 @@ object SimulationDetails {
       }
     }
 
-    return(pacingMin, pacingMax)
+    (pacingMin, pacingMax)
   }
 
 }
