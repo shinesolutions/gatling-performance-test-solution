@@ -19,10 +19,6 @@ object PostCodeScenario {
     val (pacingMin, pacingMax, userDistribution) = SimulationDetails.getScenarioValues(simulationName, simulationType)
 
     val scn: ScenarioBuilder = scenario("Postcode_RandomPostCodesOnly")
-      .exec({ session =>
-        println("Test scenario started")
-        session.set("test", "2")
-      })
       .forever {
         pace(pacingMin milliseconds, pacingMax milliseconds)
           .randomSwitch(

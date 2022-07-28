@@ -1,13 +1,14 @@
 package CommonFunctions
 
-import java.io.{File, InputStream}
-import java.nio.file.Paths
 import scala.collection.mutable
 import scala.xml.{Elem, XML}
 
 object SimulationDetails {
 
-
+  var noOfUsers = 0
+  var rampUpDuration = 0
+  var peakLoadDuration = 0
+  var targetRPM = 0
 
   /**
    * Opens the XML file containing the details of the simulation
@@ -26,10 +27,34 @@ object SimulationDetails {
     else
       xmlFilePath = xmlFilePath + configFileName
 
-    //TODO::: https://www.baeldung.com/java-classpath-resource-cannot-be-opened
-
     XML.load(getClass.getResourceAsStream(xmlFilePath))
 
+  }
+
+  /**
+   * Get the environment variables required for simulation
+   * @return noOfUsers, rampUpDuration, peakLoadDuration, targetRPM
+   */
+  def getEnvironmentVariables(): Unit = {
+
+    noOfUsers = getEnvVarOrDefault("USERS", "0").toInt
+    rampUpDuration = getEnvVarOrDefault("RAMP_UP_DURATION", "0").toInt
+    peakLoadDuration = getEnvVarOrDefault("PEAK_LOAD_DURATION", "0").toInt
+    targetRPM = getEnvVarOrDefault("TARGET_RPM", "0").toInt
+
+  }
+
+  /**
+   * Helper function for getting environment variable
+   * @param name Name of the environment variable
+   * @param defaultValue Default value for the specified environment variable to be used when valid value isn't available
+   * @return value
+   */
+  def getEnvVarOrDefault(name: String, defaultValue: String): String ={
+    if (System.getenv(name) == null || System.getenv(name) == "")
+      defaultValue
+    else
+      System.getenv(name)
   }
 
   /**
@@ -41,12 +66,11 @@ object SimulationDetails {
    */
   def getSimulationValues(simulationName: String, simulationType: String, environment: String) : (Int, Int, Int) = {
 
+    //Get all environment variables
+    getEnvironmentVariables()
+
     //Open the XML which contains simulation details
     val simulationParams = SimulationDetails.getSimulationConfigXML(simulationName)
-
-    var noOfUsers = 0
-    var rampUpDuration = 0
-    var peakLoadDuration = 0
 
     val summary = new mutable.StringBuilder("\n******************** SIMULATION VALUES ********************")
 
@@ -59,27 +83,21 @@ object SimulationDetails {
       throw new Exception("ERROR - Invalid Simulation Name provided - " + simulationType + "This simulation name does not exist in Simulation")
 
     // Get the number of users
-    if (System.getProperty("USERS") == null || (System.getProperty("USERS") == ""))
+    if (noOfUsers == 0)
       noOfUsers = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "NumberOfUsers").text.toInt
-    else
-      noOfUsers = System.getProperty("USERS").toInt
 
     validateSimulationParameter("USERS", noOfUsers)
     summary.append("\nThreads: " + noOfUsers)
 
     // Get the Ramp-up Time
-    if (System.getProperty("RAMP_UP_DURATION") == null || (System.getProperty("RAMP_UP_DURATION") == ""))
+    if (rampUpDuration == 0)
       rampUpDuration = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "RampUpDuration").text.toInt
-    else
-      rampUpDuration = System.getProperty("RAMP_UP_DURATION").toInt
 
     validateSimulationParameter("RAMP_UP_DURATION", rampUpDuration)
 
     // Get the PeakLoadDuration
-    if (System.getProperty("PEAK_LOAD_DURATION") == null || (System.getProperty("PEAK_LOAD_DURATION") == ""))
+    if (peakLoadDuration == 0)
       peakLoadDuration = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "PeakLoadDuration").text.toInt
-    else
-      peakLoadDuration = System.getProperty("PEAK_LOAD_DURATION").toInt
 
     validateSimulationParameter("PEAK_LOAD_DURATION", peakLoadDuration)
 
@@ -108,41 +126,35 @@ object SimulationDetails {
    */
   def getScenarioValues(simulationName: String, simulationType: String) : (Int, Int, Map[String, Double]) = {
 
+    //Get all environment variables
+    getEnvironmentVariables()
+
     //Open the XML which contains simulation details
     val simulationParams = SimulationDetails.getSimulationConfigXML(simulationName)
-
-    var noOfUsers = 0
-    var rampUpDuration = 0
-    var targetRPM = 0
 
     val summary = new mutable.StringBuilder("\n***********************************************************")
 
     // Get the number of users
-    if (System.getProperty("USERS") == null || (System.getProperty("USERS") == ""))
+    if (noOfUsers == 0)
       noOfUsers = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "NumberOfUsers").text.toInt
-    else
-      noOfUsers = System.getProperty("USERS").toInt
 
     validateSimulationParameter("USERS", noOfUsers)
+    summary.append("\nThreads: " + noOfUsers)
 
     // Get the Ramp-up Time
-    if (System.getProperty("RAMP_UP_DURATION") == null || (System.getProperty("RAMP_UP_DURATION") == ""))
+    if (rampUpDuration == 0)
       rampUpDuration = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "RampUpDuration").text.toInt
-    else
-      rampUpDuration = System.getProperty("RAMP_UP_DURATION").toInt
 
     validateSimulationParameter("RAMP_UP_DURATION", rampUpDuration)
 
     // Get the Target RPS
-    if (System.getProperty("TARGET_RPM") == null || (System.getProperty("TARGET_RPM") == ""))
+    if (targetRPM == 0)
       targetRPM = (simulationParams \\ "simulations" \ "simulation" \ simulationType \ "TargetRPM").text.toInt
-    else
-      targetRPM = System.getProperty("TARGET_RPM").toInt
 
     validateSimulationParameter("TARGET_RPM", targetRPM)
 
     summary.append("\nTarget RPM: " + targetRPM)
-    val targetRPS = targetRPM / 60
+    val targetRPS = targetRPM.toDouble / 60
     summary.append("\nTarget RPS: " + targetRPS)
 
     // If simulation specific weighting exist then use it. Otherwise, use the default weightings.
@@ -216,7 +228,6 @@ object SimulationDetails {
     }
   }
 
-
   /***
    * Calculates the iteration pacing required to meet the input RPS (target RPS) based on number of users and requests
    * @param targetRPS the Target Requests per second
@@ -224,13 +235,13 @@ object SimulationDetails {
    * @param requestsPerIteration requests per iteration
    * @return pacingMin, pacingMax
    */
-  def calculateIterationPacing(targetRPS: Int, numberOfUsers: Int, requestsPerIteration: Double) : (Int, Int) ={
+  def calculateIterationPacing(targetRPS: Double, numberOfUsers: Int, requestsPerIteration: Double) : (Int, Int) ={
 
     var pacingMin = 0
     var pacingMax = 0
 
-    if (targetRPS > 0) {
-      val requiredPacing: Int = (((numberOfUsers.toDouble / targetRPS.toDouble) * requestsPerIteration) * 1000).ceil.toInt
+    if (targetRPS > 0.0) {
+      val requiredPacing: Int = (((numberOfUsers.toDouble / targetRPS) * requestsPerIteration) * 1000).ceil.toInt
       pacingMin = requiredPacing - (requiredPacing * .1).ceil.toInt
       pacingMax = requiredPacing + (requiredPacing * .1).ceil.toInt
 

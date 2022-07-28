@@ -11,28 +11,28 @@ import software.amazon.awssdk.services.ecs.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.System.getenv;
 import static org.slf4j.LoggerFactory.getLogger;
 
-public class AWSLoadTestRunner {
+public class GatlingAwsTestRunner {
 
-    private static final Logger LOG = getLogger(AWSLoadTestRunner.class);
-    //private static final int SLEEP_TIME = 60_000;
+    private static final Logger LOG = getLogger(GatlingAwsTestRunner.class);
 
     private final Config config;
     private final EcsClient ecsClient;
     private final Ec2Client ec2Client;
 
     public static void main(String[] args) {
-        AWSLoadTestRunner awsLoadTestRunner = new AWSLoadTestRunner();
+        GatlingAwsTestRunner gatlingAwsTestRunner = new GatlingAwsTestRunner();
 
-        awsLoadTestRunner.runLoadTest();
+        gatlingAwsTestRunner.runLoadTest();
     }
 
-    public AWSLoadTestRunner() {
+    public GatlingAwsTestRunner() {
         this.config = new Config();
         this.ecsClient = EcsClient.builder().build();
         this.ec2Client = Ec2Client.builder().build();
@@ -44,42 +44,50 @@ public class AWSLoadTestRunner {
             throw new IllegalStateException("There are already tasks active on the cluster!");
         }
 
-        LOG.info("Starting load test on AWS with {} users: {} containers with {} users each", config.numOfLoadGenerators * config.usersPerContainer, config.numOfLoadGenerators, config.usersPerContainer);
+        LOG.info("Starting load test on AWS with {} containers", config.numOfLoadGenerators);
         //LOG.info("Feeder starting from {}", config.feederStart);
 
         StringBuilder summary = new StringBuilder("\n******************** SIMULATION VALUES ********************");
-        summary.append("\nEnvironment: " + config.environment);
-        summary.append("\nSimulation: " + config.simulation);
+        summary.append("\nEnvironment: ").append(config.environment);
+        summary.append("\nSimulation: ").append(config.simulation);
         summary.append("\nUsers: ").append(config.usersPerContainer * config.numOfLoadGenerators);
-        summary.append("\nTarget RPM: " + config.overrideTargetRpm + " requests per minute");
-        summary.append("\nRamp up duration: " + config.overrideRampUpDuration + " minute(s)");
-        summary.append("\nPeak load duration: " + config.overridePeakLoadDuration + " minute(s)");
+
+        if(config.targetRpm > 0)
+            summary.append("\nTarget RPM: ").append(config.targetRpm * config.numOfLoadGenerators).append(" requests per minute");
+
+        if(config.rampUpDuration > 0)
+            summary.append("\nRamp up duration: ").append(config.rampUpDuration).append(" minute(s)");
+
+        if(config.peakLoadDuration > 0)
+            summary.append("\nPeak load duration: ").append(config.peakLoadDuration).append(" minute(s)");
+
+        if(config.rampUpDuration > 0 && config.peakLoadDuration > 0)
+            summary.append("\nTotal duration: ").append(config.rampUpDuration + config.peakLoadDuration).append(" minute(s)");
+
         summary.append("\n**********************************************************");
 
         LOG.info(String.valueOf(summary));
 
-        LOG.info("Running for {} minute(s)", config.overrideRampUpDuration + config.overridePeakLoadDuration);
         int currentFeeder = config.feederStart;
 
         for (int i = 0; i < config.numOfLoadGenerators; i++) {
             final RunTaskRequest runTaskRequest = createRunTaskRequest(currentFeeder);
 
-            LOG.info("Starting container {}/{}, feeder starting from {}", i + 1, config.numOfLoadGenerators, currentFeeder);
+            LOG.info("Starting container {}/{}", i + 1, config.numOfLoadGenerators);
 
             ecsClient.runTask(runTaskRequest);
-
 
             currentFeeder += config.usersPerContainer;
         }
 
-        if (config.waitForTestCompletion) {
+        if (config.waitForTestCompletion)
             waitForTestCompletion();
-        }
+
 
         // This is recommended to be used when using Jenkins for triggering tests.
-        if (!config.waitForTestCompletion) {
+        if (!config.waitForTestCompletion)
             LOG.info("The test has been started in ECS cluster of your AWS account. ");
-        }
+
     }
 
     private RunTaskRequest createRunTaskRequest(int currentFeeder) {
@@ -88,20 +96,22 @@ public class AWSLoadTestRunner {
         List<KeyValuePair> environmentVariables = new ArrayList<>();
         environmentVariables.add(KeyValuePair.builder().name("REPORT_BUCKET").value(config.gatlingReportBucket).build());
         environmentVariables.add(KeyValuePair.builder().name("USERS").value(String.valueOf(config.usersPerContainer)).build());
-        environmentVariables.add(KeyValuePair.builder().name("GATLING_FEEDER_START").value(String.valueOf(currentFeeder)).build());
+        environmentVariables.add(KeyValuePair.builder().name("FEEDER_START").value(String.valueOf(currentFeeder)).build());
         environmentVariables.add(KeyValuePair.builder().name("SIMULATION").value(config.simulation).build());
+
+        if(config.simulationType != null)
+            environmentVariables.add(KeyValuePair.builder().name("SIMULATION_TYPE").value(config.simulationType).build());
+
         environmentVariables.add(KeyValuePair.builder().name("ENVIRONMENT").value(config.environment).build());
         // optional, don't set if null
-        if(config.overridePeakLoadDuration < 1)
-            environmentVariables.add(KeyValuePair.builder().name("PEAK_LOAD_DURATION").value(String.valueOf(config.overridePeakLoadDuration)).build());
+        if(config.peakLoadDuration > 0)
+            environmentVariables.add(KeyValuePair.builder().name("PEAK_LOAD_DURATION").value(String.valueOf(config.peakLoadDuration)).build());
 
-        if(config.overrideRampUpDuration < 1)
-            environmentVariables.add(KeyValuePair.builder().name("RAMP_UP_DURATION").value(String.valueOf(config.overrideRampUpDuration)).build());
+        if(config.rampUpDuration > 0)
+            environmentVariables.add(KeyValuePair.builder().name("RAMP_UP_DURATION").value(String.valueOf(config.rampUpDuration)).build());
 
-        if(config.overrideTargetRpm < 1)
-            environmentVariables.add(KeyValuePair.builder().name("TARGET_RPM").value(String.valueOf(config.overrideTargetRpm)).build());
-
-
+        if(config.targetRpm > 0)
+            environmentVariables.add(KeyValuePair.builder().name("TARGET_RPM").value(String.valueOf(config.targetRpm)).build());
 
         final TaskOverride taskOverride = TaskOverride.builder()
                 .containerOverrides(ContainerOverride.builder()
@@ -109,8 +119,6 @@ public class AWSLoadTestRunner {
                         .environment(environmentVariables)
                         .build())
                 .build();
-
-
 
         return RunTaskRequest.builder()
                 .launchType(LaunchType.FARGATE)
@@ -149,11 +157,11 @@ public class AWSLoadTestRunner {
     private int getInitialSleepTime(){
         int sleepTime = 0;
 
-        if (config.overridePeakLoadDuration < 1)
-            sleepTime = sleepTime + config.overridePeakLoadDuration;
+        if (config.peakLoadDuration > 0)
+            sleepTime = sleepTime + config.peakLoadDuration;
 
-        if (config.overrideRampUpDuration < 1)
-            sleepTime = sleepTime + config.overrideRampUpDuration;
+        if (config.rampUpDuration > 0)
+            sleepTime = sleepTime + config.rampUpDuration;
 
         if (sleepTime == 0)
             sleepTime = 60000;
@@ -198,27 +206,26 @@ public class AWSLoadTestRunner {
     static class Config {
         // Required params
         //TODO::::
-        final String vpcId = "vpc-b3ad53d6";//Objects.requireNonNull(getenv("VPC_ID"), "VPC_ID is required.");
-        final String clusterName = "gatling-cluster";//Objects.requireNonNull(getenv("CLUSTER"), "CLUSTER_NAME is required.");
-        final String taskDefinitionName = "gatling-tests";//Objects.requireNonNull(getenv("TASK_DEFINITION"), "TASK_DEFINITION_NAME is required.");
-        final String gatlingReportBucket = "gatling-results-prashant";//Objects.requireNonNull(System.getenv("REPORT_BUCKET"), "REPORT_BUCKET is required.");
+        final String vpcId = Objects.requireNonNull(getenv("VPC_ID"), "VPC_ID is required."); //"vpc-b3ad53d6";
+        final String clusterName = Objects.requireNonNull(getenv("CLUSTER_NAME"), "CLUSTER_NAME is required.");//"gatling-cluster";
+        final String taskDefinitionName = Objects.requireNonNull(getenv("TASK_DEFINITION"), "TASK_DEFINITION_NAME is required.");//"gatling-tests";
+        final String gatlingReportBucket = Objects.requireNonNull(System.getenv("REPORT_BUCKET"), "REPORT_BUCKET is required."); //"gatling-results-prashant";
 
         //Optional with defaults
-        final int numOfLoadGenerators = parseInt(getEnvVarOrDefault("NUM_OF_LOAD_GENERATORS", "2"));
+        final int numOfLoadGenerators = parseInt(getEnvVarOrDefault("NUM_OF_LOAD_GENERATORS", "1"));
 
         // The below feederStart and usersPerContainer values would be used if there is a feeder being used by simulation and we need to use different set of feeder records per container.
         // For example: Using different set of users per container.
         final int feederStart = parseInt(getEnvVarOrDefault("FEEDER_START", "0"));
         final int usersPerContainer = parseInt(getEnvVarOrDefault("USERS", "10"));
 
-        final String simulation = "simulations.PostCode.PostCodeSimulation";//Objects.requireNonNull(System.getenv("SIMULATION"), "SIMULATION is required.");
-        final String environment = "test"; //Objects.requireNonNull(System.getenv("ENVIRONMENT"), "ENVIRONMENT is required.")
-        final int overridePeakLoadDuration = 1;//parseInt(getenv("PEAK_LOAD_DURATION")); // minutes
-        final int overrideRampUpDuration = 1; //parseInt(getenv("RAMP_UP_DURATION")); // minutes
-
-        final int overrideTargetRpm = 60;//parseInt(getenv("TARGET_RPM")); // request per minute
-
-        final boolean waitForTestCompletion = true;
+        final String simulation = Objects.requireNonNull(System.getenv("SIMULATION"), "SIMULATION is required."); //"simulations.PostCode.PostCodeSimulation";
+        final String simulationType = System.getenv("SIMULATION_TYPE");
+        final String environment = Objects.requireNonNull(System.getenv("ENVIRONMENT"), "ENVIRONMENT is required."); //"test";
+        final int peakLoadDuration = parseInt(getenv("PEAK_LOAD_DURATION")); // minutes
+        final int rampUpDuration = parseInt(getenv("RAMP_UP_DURATION")); // minutes
+        final int targetRpm = parseInt(getenv("TARGET_RPM")); // request per minute
+        final boolean waitForTestCompletion = false;
 
         String getEnvVarOrDefault(String var, String defaultValue) {
             if (getenv(var) == null) {

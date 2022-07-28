@@ -1,9 +1,5 @@
 package config
 
-import CommonFunctions.SimulationDetails.getClass
-
-import java.io.File
-import java.nio.file.Paths
 import scala.xml.{Elem, XML}
 
 object ConfigDetails {

@@ -13,11 +13,12 @@ import scala.language.postfixOps
 class PostCodeSimulation extends Simulation {
 
   //Define test environment
-  def environment: String = System.getProperty("ENVIRONMENT", "test")
+  def environment: String = SimulationDetails.getEnvVarOrDefault("ENVIRONMENT", "test")
 
   val simulationName = "PostCode"
+
   //Define simulation type to be used for the test
-  val simulationType = "PostCode_1"
+  val simulationType = SimulationDetails.getEnvVarOrDefault("SIMULATION_TYPE", "PostCode_1")
 
   //Get simulation values
   val (noOfUsers, rampupTime, peakLoadDuration) = SimulationDetails.getSimulationValues(simulationName, simulationType, environment)
