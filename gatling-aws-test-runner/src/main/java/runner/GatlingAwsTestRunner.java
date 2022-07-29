@@ -21,10 +21,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class GatlingAwsTestRunner {
 
     private static final Logger LOG = getLogger(GatlingAwsTestRunner.class);
-
     private final Config config;
     private final EcsClient ecsClient;
     private final Ec2Client ec2Client;
+    private int lgIterator = 0;
+    List<KeyValuePair> environmentVariables = new ArrayList<>();
 
     public static void main(String[] args) {
         GatlingAwsTestRunner gatlingAwsTestRunner = new GatlingAwsTestRunner();
@@ -70,19 +71,20 @@ public class GatlingAwsTestRunner {
 
         int currentFeeder = config.feederStart;
 
-        for (int i = 0; i < config.numOfLoadGenerators; i++) {
+        setEnvironmentVariables();
+        for (lgIterator = 0; lgIterator < config.numOfLoadGenerators; lgIterator++) {
             final RunTaskRequest runTaskRequest = createRunTaskRequest(currentFeeder);
 
-            LOG.info("Starting container {}/{}", i + 1, config.numOfLoadGenerators);
+            LOG.info("Starting container {}/{}", lgIterator + 1, config.numOfLoadGenerators);
 
             ecsClient.runTask(runTaskRequest);
 
             currentFeeder += config.usersPerContainer;
         }
 
-        if (config.waitForTestCompletion)
+        if (config.waitForTestCompletion) {
             waitForTestCompletion();
-
+        }
 
         // This is recommended to be used when using Jenkins for triggering tests.
         if (!config.waitForTestCompletion)
@@ -90,13 +92,9 @@ public class GatlingAwsTestRunner {
 
     }
 
-    private RunTaskRequest createRunTaskRequest(int currentFeeder) {
-        final NetworkConfiguration networkConfiguration = getNetworkConfiguration();
-
-        List<KeyValuePair> environmentVariables = new ArrayList<>();
+    private void setEnvironmentVariables() {
         environmentVariables.add(KeyValuePair.builder().name("REPORT_BUCKET").value(config.gatlingReportBucket).build());
         environmentVariables.add(KeyValuePair.builder().name("USERS").value(String.valueOf(config.usersPerContainer)).build());
-        environmentVariables.add(KeyValuePair.builder().name("FEEDER_START").value(String.valueOf(currentFeeder)).build());
         environmentVariables.add(KeyValuePair.builder().name("SIMULATION").value(config.simulation).build());
 
         if(config.simulationType != null)
@@ -112,6 +110,13 @@ public class GatlingAwsTestRunner {
 
         if(config.targetRpm > 0)
             environmentVariables.add(KeyValuePair.builder().name("TARGET_RPM").value(String.valueOf(config.targetRpm)).build());
+
+    }
+
+    private RunTaskRequest createRunTaskRequest(int currentFeeder) {
+        final NetworkConfiguration networkConfiguration = getNetworkConfiguration();
+
+        environmentVariables.add(KeyValuePair.builder().name("FEEDER_START").value(String.valueOf(currentFeeder)).build());
 
         final TaskOverride taskOverride = TaskOverride.builder()
                 .containerOverrides(ContainerOverride.builder()
@@ -214,7 +219,7 @@ public class GatlingAwsTestRunner {
         //Optional with defaults
         final int numOfLoadGenerators = parseInt(getEnvVarOrDefault("NUM_OF_LOAD_GENERATORS", "1"));
 
-        // The below feederStart and usersPerContainer values would be used if there is a feeder being used by simulation and we need to use different set of feeder records per container.
+        // The below feederStart and usersPerContainer values would be used if there is a feeder being used by simulation, and we need to use different set of feeder records per container.
         // For example: Using different set of users per container.
         final int feederStart = parseInt(getEnvVarOrDefault("FEEDER_START", "0"));
         final int usersPerContainer = parseInt(getEnvVarOrDefault("USERS", "10"));
@@ -225,7 +230,7 @@ public class GatlingAwsTestRunner {
         final int peakLoadDuration = parseInt(getenv("PEAK_LOAD_DURATION")); // minutes
         final int rampUpDuration = parseInt(getenv("RAMP_UP_DURATION")); // minutes
         final int targetRpm = parseInt(getenv("TARGET_RPM")); // request per minute
-        final boolean waitForTestCompletion = false;
+        final boolean waitForTestCompletion = true;
 
         String getEnvVarOrDefault(String var, String defaultValue) {
             if (getenv(var) == null) {

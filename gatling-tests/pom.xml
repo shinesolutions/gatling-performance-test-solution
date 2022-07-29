@@ -111,7 +111,6 @@
                         <jvmArg>-Xss20M</jvmArg>
                     </jvmArgs>
                 </configuration>
-
             </plugin>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
