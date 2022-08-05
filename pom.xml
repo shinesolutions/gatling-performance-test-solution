@@ -9,7 +9,7 @@
 
   <modules>
     <module>gatling-aws-test-runner</module>
-    <module>gatling-infra</module>
+    <module>gatling-stack</module>
     <module>gatling-tests</module>
   </modules>
 

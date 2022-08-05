@@ -1,4 +1,4 @@
-package cdk.gatling.runner;
+package cdk.gatling.gatlingstack;
 
 import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
@@ -22,7 +22,7 @@ public class GatlingRunnerFargateTaskDefinition extends Construct {
                 .build();
 
         // Container
-        final ContainerDefinitionOptions gatlingRunnerContainerDefinitionOptions = new GatlingRunnerContainerOptions(this, "GatlingRunnerContainerOptions", builder.clusterNamespace, builder.taskDefinitionName, builder.bucketName)
+        final ContainerDefinitionOptions gatlingRunnerContainerDefinitionOptions = new GatlingContainerOptions(this, "GatlingRunnerContainerOptions", builder.clusterNamespace, builder.taskDefinitionName, builder.bucketName)
                 .getContainerDefinitionOptions();
 
         final Ulimit nprocUlimit = Ulimit.builder().name(UlimitName.NPROC).hardLimit(65535).softLimit(65535).build();

@@ -1,4 +1,4 @@
-package cdk.gatling.runner;
+package cdk.gatling.gatlingstack;
 
 import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -16,24 +16,24 @@ import java.util.List;
  * Creates the CloudFormation for the AWS ECS Cluster and Task definition for the Gatling Runner stack.
  * The Gatling ECS cluster uses Fargate to run stateless services.
  */
-public class GatlingRunnerEcsStack extends Stack {
+public class GatlingEcsStack extends Stack {
 
-    private GatlingRunnerEcsStack(Construct scope, String id, StackProps stackProps, Builder builder) {
+    private GatlingEcsStack(Construct scope, String id, StackProps stackProps, Builder builder) {
         super(scope, id, stackProps);
 
         // VPC and subnets lookup
-        final IVpc vpc = Vpc.fromLookup(this, "GatlingRunnerVpc", VpcLookupOptions.builder()
+        final IVpc vpc = Vpc.fromLookup(this, "GatlingVpc", VpcLookupOptions.builder()
                 .vpcId(builder.vpcId)
                 .build());
 
         // ECS Cluster setup
-        final Cluster ecsCluster = Cluster.Builder.create(this, "GatlingRunnerCluster")
+        final Cluster ecsCluster = Cluster.Builder.create(this, "GatlingCluster")
                 .clusterName(builder.ecsClusterName)
                 .vpc(vpc)
                 .build();
 
         // S3 bucket for results
-        Bucket.Builder.create(this, "GatlingRunnerBucket")
+        Bucket.Builder.create(this, "GatlingResultsBucket")
                 .bucketName(builder.bucketName)
                 .blockPublicAccess(BlockPublicAccess.Builder.create()
                         .blockPublicAcls(false)
@@ -56,7 +56,7 @@ public class GatlingRunnerEcsStack extends Stack {
                 .bucketName(builder.bucketName)
                 .fargateExecutionRole(fargateExecutionRole)
                 .fargateTaskRole(fargateTaskRole)
-                .build(this, "GatlingRunnerTaskDefinition");
+                .build(this, "GatlingTaskDefinition");
 
     }
 
@@ -89,8 +89,8 @@ public class GatlingRunnerEcsStack extends Stack {
             return this;
         }
 
-        public GatlingRunnerEcsStack build(Construct scope, String id, StackProps stackProps) {
-            return new GatlingRunnerEcsStack(scope, id, stackProps, this);
+        public GatlingEcsStack build(Construct scope, String id, StackProps stackProps) {
+            return new GatlingEcsStack(scope, id, stackProps, this);
         }
     }
 }

@@ -1,6 +1,6 @@
 package cdk.gatling;
 
-import cdk.gatling.runner.GatlingRunnerEcsStack;
+import cdk.gatling.gatlingstack.GatlingEcsStack;
 import software.amazon.awscdk.core.App;
 import software.amazon.awscdk.core.Environment;
 import software.amazon.awscdk.core.StackProps;
@@ -8,9 +8,9 @@ import software.amazon.awscdk.core.StackProps;
 import java.util.Objects;
 
 /**
- * AWS CDK app that contains the stacks for Gatling Runner
+ * AWS CDK app that contains the stacks for Gatling tests
  */
-public class GatlingInfraCdkApp {
+public class GatlingStackApp {
 
     public static void main(final String[] args) {
         App app = new App();
@@ -27,12 +27,12 @@ public class GatlingInfraCdkApp {
                         .build())
                 .build();
 
-        GatlingRunnerEcsStack.builder()
+        GatlingEcsStack.builder()
                 .bucketName(bucketName)
                 .namespace("gatling-tests")
-                .ecsClusterName("gatling-cluster")
+                .ecsClusterName("gatling-performance-test-cluster")
                 .vpcId(vpcID)
-                .build(app, "GatlingRunnerEcsStack", stackProps);
+                .build(app, "GatlingEcsStack", stackProps);
 
         app.synth();
     }

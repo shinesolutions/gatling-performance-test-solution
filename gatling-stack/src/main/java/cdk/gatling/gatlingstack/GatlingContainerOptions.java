@@ -1,4 +1,4 @@
-package cdk.gatling.runner;
+package cdk.gatling.gatlingstack;
 
 import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.core.RemovalPolicy;
@@ -12,21 +12,21 @@ import software.amazon.awscdk.services.logs.RetentionDays;
 
 import java.util.Arrays;
 
-class GatlingRunnerContainerOptions extends Construct {
+class GatlingContainerOptions extends Construct {
     private final ContainerDefinitionOptions containerDefinitionOptions;
 
-    public GatlingRunnerContainerOptions(Construct scope, String id, String clusterNamespace, String taskDefinitionName, String bucket) {
+    public GatlingContainerOptions(Construct scope, String id, String clusterNamespace, String taskDefinitionName, String bucket) {
         super(scope, id);
 
-        DockerImageAsset gatlingRunnerAsset = DockerImageAsset.Builder.create(this, "gatlingRunnerAsset")
+        DockerImageAsset gatlingDockerImageAsset = DockerImageAsset.Builder.create(this, "GatlingDockerImageAsset")
                 .directory("../gatling-tests")
                 .build();
 
         this.containerDefinitionOptions = ContainerDefinitionOptions.builder()
-                .image(ContainerImage.fromDockerImageAsset(gatlingRunnerAsset))
+                .image(ContainerImage.fromDockerImageAsset(gatlingDockerImageAsset))
                 .command(Arrays.asList("-r", bucket))
                 .logging(LogDriver.awsLogs(AwsLogDriverProps.builder()
-                        .logGroup(LogGroup.Builder.create(this, "gatlingRunnerFargateLogGroup")
+                        .logGroup(LogGroup.Builder.create(this, "GatlingFargateLogGroup")
                                 .logGroupName(String.format("/ecs/%s/%s", clusterNamespace, taskDefinitionName))
                                 .retention(RetentionDays.TWO_WEEKS)
                                 .removalPolicy(RemovalPolicy.DESTROY)

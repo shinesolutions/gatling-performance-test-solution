@@ -1,4 +1,4 @@
-package cdk.gatling.runner;
+package cdk.gatling.gatlingstack;
 
 import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
