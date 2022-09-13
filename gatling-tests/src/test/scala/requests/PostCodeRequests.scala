@@ -14,4 +14,10 @@ object PostCodeRequests {
       .headers(headers_1))
   }
 
+  def GET_Postcode(host: String, postcode: String): ChainBuilder = {
+    exec(http("GET_Postcode")
+      .get(host + "/postcodes/" + postcode)
+      .headers(headers_1))
+  }
+
 }

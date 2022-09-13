@@ -80,7 +80,7 @@ object SimulationDetails {
     summary.append("\n**********************************************************")
 
     if ((simulationParams \\ "simulations" \ "simulation" \ simulationType).isEmpty)
-      throw new Exception("ERROR - Invalid Simulation Name provided - " + simulationType + "This simulation name does not exist in Simulation")
+      throw new Exception("ERROR - Invalid Simulation type provided - " + simulationType + "This simulation type does not exist in Simulation")
 
     // Get the number of users
     if (noOfUsers == 0)

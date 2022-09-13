@@ -18,7 +18,7 @@ class PostCodeSimulation extends Simulation {
   val simulationName = "PostCode"
 
   //Define simulation type to be used for the test
-  val simulationType = SimulationDetails.getEnvVarOrDefault("SIMULATION_TYPE", "PostCode_1")
+  val simulationType = SimulationDetails.getEnvVarOrDefault("SIMULATION_TYPE", "loadtest")
 
   //Get simulation values
   val (noOfUsers, rampupTime, peakLoadDuration) = SimulationDetails.getSimulationValues(simulationName, simulationType, environment)

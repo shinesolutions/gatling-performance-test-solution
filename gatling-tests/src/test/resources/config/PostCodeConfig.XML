@@ -7,33 +7,45 @@
         </Get_Postcode>
     </DefaultWeighting>
     <simulation>
-        <PostCode_1>
-            <NumberOfUsers>2</NumberOfUsers>
+        <loadtest>
+            <NumberOfUsers>20</NumberOfUsers>
             <RampUpDuration>1</RampUpDuration>
             <PeakLoadDuration>1</PeakLoadDuration>
             <TargetRPM>60</TargetRPM>
             <ActionWeighting>
                 <Get_Postcode_Random>
-                    <UserDistribution>100</UserDistribution>
+                    <UserDistribution>55</UserDistribution>
                     <RequestsPerIteration>1</RequestsPerIteration>
                 </Get_Postcode_Random>
+                <Get_Postcode>
+                    <UserDistribution>45</UserDistribution>
+                    <RequestsPerIteration>1</RequestsPerIteration>
+                </Get_Postcode>
             </ActionWeighting>
-        </PostCode_1>
-        <PostCode_2>
+        </loadtest>
+        <stresstest>
             <NumberOfUsers>200</NumberOfUsers>
             <RampUpDuration>15</RampUpDuration>
             <PeakLoadDuration>60</PeakLoadDuration>
             <TargetRPM>300</TargetRPM>
             <ActionWeighting>
                 <Get_Postcode_Random>
-                    <UserDistribution>50</UserDistribution>
+                    <UserDistribution>100</UserDistribution>
                     <RequestsPerIteration>1</RequestsPerIteration>
                 </Get_Postcode_Random>
-                <Get_Postcode>
-                    <UserDistribution>50</UserDistribution>
-                    <RequestsPerIteration>1</RequestsPerIteration>
-                </Get_Postcode>
             </ActionWeighting>
-        </PostCode_2>
+        </stresstest>
+        <soaktest>
+            <NumberOfUsers>10</NumberOfUsers>
+            <RampUpDuration>15</RampUpDuration>
+            <PeakLoadDuration>200</PeakLoadDuration>
+            <TargetRPM>300</TargetRPM>
+            <ActionWeighting>
+                <Get_Postcode_Random>
+                    <UserDistribution>100</UserDistribution>
+                    <RequestsPerIteration>1</RequestsPerIteration>
+                </Get_Postcode_Random>
+            </ActionWeighting>
+        </soaktest>
     </simulation>
 </simulations>

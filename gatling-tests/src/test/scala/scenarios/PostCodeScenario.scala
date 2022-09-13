@@ -23,7 +23,10 @@ object PostCodeScenario {
         pace(pacingMin milliseconds, pacingMax milliseconds)
           .randomSwitch(
             userDistribution("Get_Postcode_Random") ->
-              exec(PostCodeRequests.GET_Postcode_Random(pcHost))
+              exec(PostCodeRequests.GET_Postcode_Random(pcHost)),
+
+            userDistribution("Get_Postcode") ->
+              exec(PostCodeRequests.GET_Postcode(pcHost, "OX495NU"))
           )
       }
 
